@@ -33,9 +33,25 @@ module Nylera
       return unless start_new_track(index)
 
       @elapsed_mtx.synchronize { @elapsed_time[:seconds] = 0.0 }
-      create_audio_player
-    rescue StandardError => e
-      @tui.update(index, 'Error', e.message)
+      
+      begin
+        create_audio_player
+      rescue => e
+        # Show error in UI
+        error_msg = e.message.split("\n").first
+        @tui.update(index, 'Error', error_msg, 0.0)
+        
+        # Log full error
+        File.open('nylera_errors.log', 'a') do |f|
+          f.puts "[#{Time.now}] Audio initialization failed:"
+          f.puts e.message
+          f.puts e.backtrace.join("\n")
+          f.puts "---"
+        end
+        
+        puts "\nError: #{error_msg}"
+        puts "See nylera_errors.log for details"
+      end
     end
 
     def handle_existing_playback
@@ -70,13 +86,18 @@ module Nylera
       @tui.instance_variable_set(:@album_str,     album)
       @tui.instance_variable_set(:@genre_str,     genre)
 
-      @tui.update(index, 'Playing', song_name, decoder.duration_seconds)
+      @tui.update(index, 'Ready', song_name, decoder.duration_seconds)
     end
 
     def create_audio_player
       @audio_player = Nylera::AudioPlayer.new(@decoder_for_player, @elapsed_time, @elapsed_mtx, method(:update_status))
       @player_thread = Thread.new do
-        @audio_player.play(@pause_flag, @stop_flag)
+        begin
+          @audio_player.play(@pause_flag, @stop_flag)
+        rescue => e
+          puts "Playback thread error: #{e.message}"
+          @status = 'Error'
+        end
       end
     end
 

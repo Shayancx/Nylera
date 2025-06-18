@@ -2,16 +2,20 @@
 
 require_relative 'box_drawer'
 require_relative 'progress_bar'
+require_relative 'error_display'
 
 module Nylera
   module TUI
     # Draws the "info" region at the bottom/right that shows song, artist, etc.
     module InfoBox
+      include ErrorDisplay
+      
       def draw_info_box(pos_y, pos_x, box_w, box_h)
         return if box_h < 2
 
         draw_box_frame(pos_y, pos_x, box_w, box_h, 4)
         draw_info_contents(pos_y + 1, pos_x + 1, box_w - 2, box_h - 2)
+        draw_error_if_needed
       end
 
       def draw_info_contents(top_row, left_col, width_avail, height_avail)
@@ -28,7 +32,7 @@ module Nylera
         draw_info_data(top_row, left_col, width_avail, meta_text)
 
         # Progress bar draws 2 lines below
-        draw_progress_bar(top_row + 2, left_col, width_avail, height_avail - 2)
+        draw_progress_bar(top_row + 2, left_col, width_avail, height_avail - 2) if height_avail > 2
       end
 
       private

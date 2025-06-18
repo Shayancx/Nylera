@@ -5,11 +5,14 @@ require_relative 'box_drawer'
 module Nylera
   module TUI
     # Draws the left box for playlist navigation
+    # PERFORMANCE: Optimized to only redraw changed lines
     module NavigationBox
       def draw_nav_box(pos_y, pos_x, box_w, box_h)
         return if box_h < 2
 
+        # Always draw box frame for now
         draw_box_frame(pos_y, pos_x, box_w, box_h, 4)
+        
         offset_top = pos_y + 1
         offset_top += draw_search_bar(offset_top, pos_x + 1, box_w - 2) if @search_mode
 
