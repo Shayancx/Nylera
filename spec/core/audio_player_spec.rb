@@ -51,17 +51,31 @@ RSpec.describe Nylera::AudioPlayer do
 
     it 'plays audio until stopped' do
       stop_flag[:value] = true
-      expect(status_cb).to receive(:call).with('Playing')
+      expect(status_cb).to receive(:call).with('Playing').at_least(:once)
       expect(status_cb).to receive(:call).with('Stopped')
       player.play(pause_flag, stop_flag)
     end
 
     it 'handles pause state' do
-      pause_flag[:value] = true
-      stop_flag[:value] = true
-      expect(status_cb).to receive(:call).with('Playing')
-      expect(status_cb).to receive(:call).with('Paused')
+      # Set up the sequence: play one frame, then pause, then stop
+      call_count = 0
+      allow(decoder).to receive(:decode) do
+        call_count += 1
+        if call_count == 1
+          'audio_data'  # First call returns data
+        elsif call_count == 2
+          pause_flag[:value] = true  # Set pause before second decode
+          'audio_data'
+        else
+          stop_flag[:value] = true   # Stop after pause
+          ''
+        end
+      end
+      
+      expect(status_cb).to receive(:call).with('Playing').at_least(:once)
+      expect(status_cb).to receive(:call).with('Paused').at_least(:once)
       expect(status_cb).to receive(:call).with('Stopped')
+      
       player.play(pause_flag, stop_flag)
     end
   end

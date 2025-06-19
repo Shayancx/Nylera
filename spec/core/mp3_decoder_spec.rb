@@ -61,7 +61,8 @@ RSpec.describe Nylera::MP3Decoder do
     end
 
     it 'seeks forward in the stream' do
-      expect(Nylera::MPG123).to receive(:mpg123_seek).with(anything, 45100, Nylera::MPG123::SEEK_SET)
+      # Fix: Calculate correct frame position (1 second at 44100Hz = 44100 frames)
+      expect(Nylera::MPG123).to receive(:mpg123_seek).with(anything, 1000 + 44100, Nylera::MPG123::SEEK_SET)
       decoder.seek_relative(1)
     end
 

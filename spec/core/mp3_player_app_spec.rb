@@ -3,20 +3,14 @@ require 'tmpdir'
 require 'fileutils'
 
 RSpec.describe Nylera::MP3PlayerApp do
-  # Skip all tests if MPG123 module not loaded
-  before(:all) do
-    skip "MPG123 library not available" unless defined?(Nylera::MPG123)
-  end
-  
   let(:music_dir) { Dir.mktmpdir }
-  let(:app) { described_class.new(music_dir) }
-
+  
   before do
     # Create test MP3 files
     File.write(File.join(music_dir, 'test1.mp3'), 'dummy')
     File.write(File.join(music_dir, 'test2.mp3'), 'dummy')
     
-    # Mock MPG123 initialization
+    # Mock MPG123 initialization BEFORE creating the app
     allow(Nylera::MPG123).to receive(:mpg123_init)
     allow(Nylera::MPG123).to receive(:mpg123_exit)
   end
@@ -27,13 +21,15 @@ RSpec.describe Nylera::MP3PlayerApp do
 
   describe '#initialize' do
     it 'loads playlist from music directory' do
+      app = described_class.new(music_dir)
       playlist = app.instance_variable_get(:@playlist)
       expect(playlist.size).to eq(2)
       expect(playlist.all? { |f| f.end_with?('.mp3') }).to be true
     end
 
     it 'initializes MPG123' do
-      expect(Nylera::MPG123).to have_received(:mpg123_init)
+      expect(Nylera::MPG123).to receive(:mpg123_init)
+      described_class.new(music_dir)
     end
 
     context 'with empty directory' do
@@ -48,6 +44,7 @@ RSpec.describe Nylera::MP3PlayerApp do
   end
 
   describe '#handle_action' do
+    let(:app) { described_class.new(music_dir) }
     let(:tui) { double('tui', update: nil, filtered_playlist: app.instance_variable_get(:@playlist)) }
 
     before do
