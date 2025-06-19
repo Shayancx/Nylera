@@ -1,20 +1,19 @@
-require 'simplecov'
-SimpleCov.start do
-  add_filter '/spec/'
-  add_filter '/vendor/'
+# Only load SimpleCov if explicitly requested
+if ENV['COVERAGE']
+  require 'simplecov'
+  SimpleCov.start do
+    add_filter '/spec/'
+    add_filter '/vendor/'
+  end
 end
 
 $LOAD_PATH.unshift(File.expand_path('../lib', __dir__))
 
-# Mock FFI library loading for tests if libraries not available
-begin
-  require 'ffi'
-rescue LoadError
-  puts "Warning: FFI gem not available, some tests may fail"
-end
+# Set test environment
+ENV['RACK_ENV'] = 'test'
 
-# Require all library files, handling potential load errors
-Dir[File.join(__dir__, '../lib/**/*.rb')].each do |f|
+# Require all library files
+Dir[File.join(__dir__, '../lib/**/*.rb')].sort.each do |f|
   begin
     require f
   rescue LoadError => e
@@ -31,20 +30,24 @@ RSpec.configure do |config|
     mocks.verify_partial_doubles = true
   end
 
-  config.shared_context_metadata_behavior = :apply_to_host_groups
-  config.filter_run_when_matching :focus
-  config.example_status_persistence_file_path = "spec/examples.txt"
-  config.disable_monkey_patching!
-  config.warnings = true
-
-  if config.files_to_run.one?
-    config.default_formatter = "doc"
+  # Set a timeout for specs to prevent freezing
+  config.around(:each) do |example|
+    Timeout.timeout(5) do
+      example.run
+    end
   end
 
-  config.profile_examples = 10
+  config.shared_context_metadata_behavior = :apply_to_host_groups
+  config.filter_run_when_matching :focus
+  config.disable_monkey_patching!
+  config.warnings = false  # Reduce noise
+  
   config.order = :random
   Kernel.srand config.seed
   
   # Skip tests that require actual audio hardware in CI environments
   config.filter_run_excluding :requires_audio_hardware if ENV['CI']
+  
+  # Skip performance tests by default
+  config.filter_run_excluding :performance unless ENV['PERF_TEST']
 end

@@ -53,3 +53,10 @@ module Nylera
     end
   end
 end
+
+      def exit_application
+        clear
+        refresh
+        close_screen
+        exit
+      end

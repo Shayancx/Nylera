@@ -4,11 +4,11 @@ module Nylera
   module TUI
     # Handles the search mode logic (typing, filtering, etc.)
     module SearchHandler
-      def process_search_input(input_key)
-        return if handle_esc_enter(input_key) { |act| yield(act) if block_given? }
+      def process_search_input(input_key, &block)
+        return if handle_esc_enter(input_key, &block)
         return handle_backspace if backspace_key?(input_key)
 
-        handle_general_search_key(input_key) { |act| yield(act) if block_given? }
+        handle_general_search_key(input_key, &block)
       end
 
       def enter_search_mode

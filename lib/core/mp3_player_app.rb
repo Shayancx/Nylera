@@ -7,7 +7,7 @@ require_relative '../metadata/metadata_extractor'
 require_relative 'mp3_player_app_helpers'
 require_relative 'audio_player'
 require_relative 'mp3_decoder'
-require_relative '../tui/tui'
+require_relative '../tui/tui_optimized'
 
 module Nylera
   # Main application controller for the MP3 player.
